@@ -58,6 +58,42 @@ const handleEphemeralSession = async (_req, res) => {
 
 // Keep both so either path works
 app.post("/api/voice-token", handleEphemeralSession);
+app.get("/session", async (_req, res) => {
+  try {
+    const r = await fetch("https://api.openai.com/v1/realtime/sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-realtime-preview-2024-12-17",
+        voice: "aria",
+        instructions: [
+          "You are Molly, Wave’s recruiting assistant.",
+          "Speak British English with a natural London accent; sound like a friendly 30-year-old woman.",
+          "Be concise, warm, and practical. No corporate jargon.",
+          "Confirm must-have skills, location, and comp band before searching.",
+          "When you need to search Bullhorn, output exactly one line of the form:",
+          "@@SEARCH {\"job_title\":\"...\",\"skills\":[\"...\"],\"location\":\"...\",\"seniority\":\"junior|mid|senior|lead\",\"top_n\":5}",
+          "After outputting that line, wait for results before continuing."
+        ].join(" ")
+      })
+    });
+
+    const data = await r.json();
+
+    if (!r.ok) {
+      console.error("Ephemeral key error:", r.status, data);
+      return res.status(r.status).json(data);
+    }
+
+    res.json(data);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 app.get("/session", handleEphemeralSession);
 app.post("/session", handleEphemeralSession);
     const data = await r.json();
