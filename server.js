@@ -18,7 +18,8 @@ const bullhorn = {
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
 // OpenAI Realtime: ephemeral session token (Aria voice, Molly persona)
-app.post("/api/voice-token", async (_req, res) => {
+// OpenAI Realtime: ephemeral session token (Aria voice, Molly persona)
+const handleEphemeralSession = async (_req, res) => {
   try {
     const r = await fetch("https://api.openai.com/v1/realtime/sessions", {
       method: "POST",
@@ -40,6 +41,25 @@ app.post("/api/voice-token", async (_req, res) => {
         ].join(" ")
       })
     });
+
+    const data = await r.json();
+
+    if (!r.ok) {
+      console.error("Ephemeral key error:", r.status, data);
+      return res.status(r.status).json(data);
+    }
+
+    res.json(data);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+// Keep both so either path works
+app.post("/api/voice-token", handleEphemeralSession);
+app.get("/session", handleEphemeralSession);
+app.post("/session", handleEphemeralSession);
     const data = await r.json();
     if (!r.ok) return res.status(500).json({ error: "Failed to create session", details: data });
     res.json(data);
